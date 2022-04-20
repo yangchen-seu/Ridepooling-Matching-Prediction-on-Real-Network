@@ -17,5 +17,6 @@ params = {
     'speed': 600, # m/min
     'max_iter_time': 200,
     'convergent_condition': 1e-6,
-    'M': 100000000,
+    'M': 1e6,
+    'epsilon': 1e-6,
 }

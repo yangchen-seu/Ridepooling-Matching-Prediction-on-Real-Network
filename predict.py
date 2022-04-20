@@ -22,27 +22,37 @@ with open("tmp/OD.pickle", 'rb') as f:
     OD_dict: dict = pickle.load(f)
 with open("tmp/shortest_path.pickle", 'rb') as f:
     path_dict: dict = pickle.load(f)
-match_df = pd.read_csv("result/match.csv", index_col=["seeker_id", "taker_id", "link_idx"])
-matches = dict()
-for index, row in match_df.iterrows():
-    matches.setdefault(index[0], []).append({"taker_id": index[1], "link_idx": index[2], "preference": row["preference"],
-                                             "ride_seeker": row["ride_seeker"], "ride_taker": row["ride_taker"],
-                                             "detour_seeker": row["detour_seeker"], "detour_taker": row["detour_taker"], "shared": row["shared"], "eta_match": 0})
-print("Data loaded.")
-# ---------- Initialize seekers and takers ----------
-seekers = dict()
-for seeker_id, OD in OD_dict.items():
-    seekers[seeker_id] = {"lambda": OD[2], "p_seeker": OD[2]}
 
-takers = dict()
-for taker_id in OD_dict.keys():
-    # if taker_id >= params["OD_num"]:
-    #     continue
-    takers[taker_id] = dict()
-    path = path_dict[taker_id][:-1]
-    takers[taker_id][0] = dict({"tau_bar": params['pickup_time'], "lambda_taker": 0, "p_taker": 0.1, "rho_taker": 0, "eta_taker": 0})
-    for link_idx, link_id in enumerate(path):
-        takers[taker_id][link_idx + 1] = {"tau_bar": link_dict[link_id][2] / params['speed'], "lambda_taker": 0, "p_taker": 0.1, "rho_taker": 0, "eta_taker": 0}
+isPrestored = input("Do you want to use the result of the last executation? (y/n) ")
+if isPrestored == 'n':
+    match_df = pd.read_csv("result/match.csv", index_col=["seeker_id", "taker_id", "link_idx"])
+    matches = dict()
+    for index, row in match_df.iterrows():
+        matches.setdefault(index[0], []).append({"taker_id": index[1], "link_idx": index[2], "preference": row["preference"],
+                                                "ride_seeker": row["ride_seeker"], "ride_taker": row["ride_taker"],
+                                                "detour_seeker": row["detour_seeker"], "detour_taker": row["detour_taker"], "shared": row["shared"], "eta_match": 0})
+    print("Data loaded.")
+    # ---------- Initialize seekers and takers ----------
+    seekers = dict()
+    for seeker_id, OD in OD_dict.items():
+        seekers[seeker_id] = {"lambda": OD[2], "p_seeker": OD[2]}
+
+    takers = dict()
+    for taker_id in OD_dict.keys():
+        # if taker_id >= params["OD_num"]:
+        #     continue
+        takers[taker_id] = dict()
+        path = path_dict[taker_id][:-1]
+        takers[taker_id][0] = dict({"tau_bar": params['pickup_time'], "lambda_taker": 0, "p_taker": 0.1, "rho_taker": 0, "eta_taker": 0})
+        for link_idx, link_id in enumerate(path):
+            takers[taker_id][link_idx + 1] = {"tau_bar": link_dict[link_id][2] / params['speed'], "lambda_taker": 0, "p_taker": 0.1, "rho_taker": 0, "eta_taker": 0}
+else:
+    with open("variables/seekers.pickle", 'rb') as f:
+        seekers: dict = pickle.load(f)
+    with open("variables/takers.pickle", 'rb') as f:
+        takers: dict = pickle.load(f)
+    with open("variables/matches.pickle", 'rb') as f:
+        matches: dict = pickle.load(f)
 print("Variables initialized.")
 # ---------- Start to iterate ----------
 iter_start_time = time.time()
@@ -101,7 +111,11 @@ iter_end_time = time.time()
 print("\nConverge! It costs:", iter_end_time - iter_start_time)
 print("The average time of iteration:", (iter_end_time - iter_start_time) / iter_num)
 # ---------- Plot the iteration ----------
-plt.plot(all_steps)
+plt.plot(all_steps, label=["lambda t(a, w)", "p s(w)", "p t(a, w)", "rho t(a, w)"])
+plt.ylabel("Delta")
+plt.xlabel("Iteration Time")
+plt.title("Iteration")
+plt.legend()
 plt.savefig("result/iteration.png")
 
 # ---------- Calculate the prediction result ----------
@@ -127,13 +141,15 @@ for seeker_id in seekers.keys():
     seekers[seeker_id]["ride_distance"] = 0
     seekers[seeker_id]["detour_distance"] = 0
     seekers[seeker_id]["shared_distance"] = 0
-    seekers[seeker_id]["ride_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_ride_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", 1e-10)
-    seekers[seeker_id]["detour_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_detour_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", 1e-10)
-    seekers[seeker_id]["shared_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_shared_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", 1e-10)
+    seekers[seeker_id]["ride_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_ride_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
+    seekers[seeker_id]["detour_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_detour_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
+    seekers[seeker_id]["shared_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_shared_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
     for link_idx, link in takers[seeker_id].items():
-        seekers[seeker_id]["ride_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_ride_distance", 0) / link.setdefault("total_matching_rate", 1e-10)
-        seekers[seeker_id]["detour_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_detour_distance", 0) / link.setdefault("total_matching_rate", 1e-10)
-        seekers[seeker_id]["shared_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_shared_distance", 0) / link.setdefault("total_matching_rate", 1e-10)
+        if link.setdefault("total_matching_rate", params["epsilon"]) == 0:
+            continue
+        seekers[seeker_id]["ride_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_ride_distance", 0) / link.setdefault("total_matching_rate", params["epsilon"])
+        seekers[seeker_id]["detour_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_detour_distance", 0) / link.setdefault("total_matching_rate", params["epsilon"])
+        seekers[seeker_id]["shared_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_shared_distance", 0) / link.setdefault("total_matching_rate", params["epsilon"])
     seekers[seeker_id]["ride_distance"] += (1 - seekers[seeker_id]["matching_prob"]) * L
 
 # ---------- Save the prediction result to csv ----------
