@@ -5,8 +5,9 @@ Copyright (c) 2021 Yuzhen FENG
 """
 params = {
     'lowest_road_class': 5,
-    'OD_num': 5000,
-    'process_num': 24,
+    'max_combined_length': 1000,
+    'OD_num': 500,
+    'process_num': 4,
     'chunk_num': 5,
     'search_radius': 2000,
     'max_detour': 3000,

@@ -42,9 +42,11 @@ for mid in list(connected_G.nodes):
     if len(neighbors) == 2:
         u = neighbors[0]; v = neighbors[1]
         length_u = connected_G.get_edge_data(u, mid)["length"]
+        length_v = connected_G.get_edge_data(v, mid)["length"]
+        if length_u + length_v > params["max_combined_length"]:
+            continue
         geometry_u: str = connected_G.get_edge_data(u, mid)["geometry"]
         link_type_u = connected_G.get_edge_data(u, mid)["link_type"]
-        length_v = connected_G.get_edge_data(v, mid)["length"]
         geometry_v = connected_G.get_edge_data(v, mid)["geometry"]
         link_type_v = connected_G.get_edge_data(v, mid)["link_type"]
         connected_G.add_edge(u, v, length=length_u + length_v, geometry=combine_geometry(geometry_u, geometry_v), link_type=np.random.choice([link_type_u, link_type_v]))
