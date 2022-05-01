@@ -48,6 +48,7 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
     match = []
     # ---------- get the subgraph of neighbors centered at the origin of the seeker
     nearest_G: nx.Graph = subgraph[OD_idx1]
+    path = path_dict[OD_idx2][:-1]
 
     if nearest_G.has_node(OD2[0]):
         pickup_distance = nearest_G.nodes[OD2[0]]["weight"]
@@ -81,7 +82,6 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
                 prefer = params['w_detour'] * detour + params['w_pickup'] * pickup_distance + params['w_shared'] * shared
                 match.append([OD_idx1, OD_idx2, 0, prefer, ride_seeker, ride_taker, detour_seeker, detour_taker, shared])
     for edge in nearest_G.edges(data=True):
-        path = path_dict[OD_idx2][:-1]
         link_id = edge[2]["key"]
         if link_id in path:
             L_taker_init = 0
@@ -91,6 +91,7 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
                 if path_link_id == link_id:
                     break
                 L_taker_init += link_dict[path_link_id][2]
+            L_taker_init += link_dict[link_id][2] / 2
             pickup_distance = (nearest_G.nodes[link_dict[link_id][0]]["weight"] + nearest_G.nodes[link_dict[link_id][1]]["weight"]) / 2
             if pickup_distance > params["search_radius"]:
                 continue
@@ -111,10 +112,14 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
             detour = min(max(L_seeker_FOFO - L1, L_taker_FOFO - L2), max(L_seeker_FOLO - L1, L_taker_FOLO - L2))
             if detour < params['max_detour']:
                 if max(L_seeker_FOFO - L1, L_taker_FOFO - L2) < max(L_seeker_FOLO - L1, L_taker_FOLO - L2):
+                    if L_taker_init + pickup_distance + distance_between_dest >= L2 + L1:
+                        continue
                     ride_seeker = L_seeker_FOFO
                     ride_taker = L_taker_FOFO
                     shared = distance_from_seeker_origin_to_taker_dest
                 else:
+                    if L_taker_init + pickup_distance + distance_between_dest >= L1 + distance_from_seeker_origin_to_taker_dest:
+                        continue
                     ride_seeker = L_seeker_FOLO
                     ride_taker = L_taker_FOLO
                     shared = L1
@@ -171,6 +176,7 @@ if __name__ == '__main__':
     m = pd.DataFrame(result, columns=["seeker_id", "taker_id", "link_idx", "preference", "ride_seeker", "ride_taker", "detour_seeker", "detour_taker", "shared"])
     m.sort_values(by=["seeker_id", "preference"], ascending=[True, False])
     m.to_csv("result/match.csv", index=False)
+    print("There are", m.shape[0], "matching pairs in all.")
     # ---------- close the process pool ----------
     pool.close()
     pool.join()

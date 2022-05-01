@@ -17,6 +17,7 @@ params = {
     'pickup_time': 2,
     'speed': 600, # m/min
     'max_iter_time': 200,
+    "min_iter_time": 5,
     'convergent_condition': 1e-6,
     'M': 1e6,
     'epsilon': 1e-6,

@@ -8,6 +8,8 @@ import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
 import time
 import os
 from progress.bar import Bar
@@ -60,7 +62,7 @@ all_steps = []
 iter_num = 0
 error = params['M']
 print("Iterating... |", end='')
-while iter_num < params['max_iter_time'] and error > params['convergent_condition']:
+while iter_num < params['max_iter_time'] and error > params['convergent_condition'] or iter_num < params["min_iter_time"]:
     print(iter_num % 10, end='', flush=True)
     lambda_taker_step = []
     p_seeker_step = []
@@ -105,16 +107,18 @@ while iter_num < params['max_iter_time'] and error > params['convergent_conditio
             lambda_taker_step.append(abs(takers[taker_id][link_idx]["lambda_taker"] - origin_lambda_taker))
     
     iter_num += 1
-    all_steps.append([np.max(lambda_taker_step), np.max(p_seeker_step), np.max(p_taker_step), np.max(rho_taker_step)])
-    error = np.max(all_steps[len(all_steps) - 1])
+    if iter_num >= params["min_iter_time"]:
+        all_steps.append([np.max(lambda_taker_step), np.max(p_seeker_step), np.max(p_taker_step), np.max(rho_taker_step)])
+        error = np.max(all_steps[len(all_steps) - 1])
 iter_end_time = time.time()
 print("\nConverge! It costs:", iter_end_time - iter_start_time)
 print("The average time of iteration:", (iter_end_time - iter_start_time) / iter_num)
 # ---------- Plot the iteration ----------
-plt.plot(all_steps, label=["lambda t(a, w)", "p s(w)", "p t(a, w)", "rho t(a, w)"])
+plt.plot(np.arange(len(all_steps)) + params["min_iter_time"], all_steps, label=["lambda t(a, w)", "p s(w)", "p t(a, w)", "rho t(a, w)"])
 plt.ylabel("Delta")
 plt.xlabel("Iteration Time")
 plt.title("Iteration")
+plt.yscale("log")
 plt.legend()
 plt.savefig("result/iteration.png")
 
