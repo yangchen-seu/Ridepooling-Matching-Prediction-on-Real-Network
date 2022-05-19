@@ -23,7 +23,7 @@ if True:
         path_dict: dict = pickle.load(f)
     if len(OD_dict) < params['OD_num']:
         print("WARNING: The number of OD in OD.pickle is less than that set in settings.py")
-        quit()
+        # quit()
     with open("tmp/graph.pickle", 'rb') as f:
         G: nx.Graph = pickle.load(f)
     with open("tmp/ego_graph.pickle", 'rb') as f:
