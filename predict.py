@@ -148,6 +148,9 @@ for seeker_id in seekers.keys():
     seekers[seeker_id]["ride_distance_for_taker"] = 0
     seekers[seeker_id]["detour_distance_for_taker"] = 0
     seekers[seeker_id]["shared_distance_for_taker"] = 0
+    seekers[seeker_id]["ride_distance_for_seeker"] = seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_ride_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
+    seekers[seeker_id]["detour_distance_for_seeker"] = seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_detour_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
+    seekers[seeker_id]["shared_distance_for_seeker"] = seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_shared_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
     seekers[seeker_id]["ride_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_ride_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
     seekers[seeker_id]["detour_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_detour_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
     seekers[seeker_id]["shared_distance"] += seekers[seeker_id]["p_seeker"] * seekers[seeker_id].setdefault("total_shared_distance", 0) / seekers[seeker_id].setdefault("total_matching_rate", params["epsilon"])
@@ -162,11 +165,15 @@ for seeker_id in seekers.keys():
         seekers[seeker_id]["detour_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_detour_distance", 0) / link.setdefault("total_matching_rate", params["epsilon"])
         seekers[seeker_id]["shared_distance"] += link["lambda_taker"] * link["p_taker"] / seekers[seeker_id]["lambda"] * link.setdefault("total_shared_distance", 0) / link.setdefault("total_matching_rate", params["epsilon"])
     seekers[seeker_id]["ride_distance"] += (1 - seekers[seeker_id]["matching_prob"]) * L
+    seekers[seeker_id]["ride_distance_for_seeker"] += (1 - seekers[seeker_id]["p_seeker"]) * L
     seekers[seeker_id]["ride_distance_for_taker"] += takers[seeker_id][len(takers[seeker_id]) - 1]["lambda_taker"] * (1 - takers[seeker_id][len(takers[seeker_id]) - 1]["p_taker"]) / lambda_become_taker * L
 
 # ---------- Save the prediction result to csv ----------
 print("Result saving ...")
-result = pd.DataFrame.from_dict(seekers, orient='index').loc[:, ["matching_prob", "ride_distance", "detour_distance", "shared_distance", "ride_distance_for_taker", "detour_distance_for_taker", "shared_distance_for_taker"]]
+result = pd.DataFrame.from_dict(seekers, orient='index').loc[:, [
+    "matching_prob", "ride_distance", "detour_distance", "shared_distance", 
+    "ride_distance_for_taker", "detour_distance_for_taker", "shared_distance_for_taker", 
+    "ride_distance_for_seeker", "detour_distance_for_seeker", "shared_distance_for_seeker"]]
 result.index.name = "OD_id"
 result.to_csv("result/predict_result.csv")
 
