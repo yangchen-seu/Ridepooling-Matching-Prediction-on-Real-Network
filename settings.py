@@ -11,9 +11,10 @@ params = {
     'chunk_num': 5,
     'search_radius': 2000,
     'max_detour': 3000,
-    'w_detour': -0.5,
-    'w_pickup': -0.3,
-    'w_shared': 0.2,
+    'w_detour': 0,
+    'w_pickup': 0,
+    'w_shared': 0,
+    "w_ride": -1,
     'pickup_time': 2,
     'speed': 600, # m/min
     'max_iter_time': 200,

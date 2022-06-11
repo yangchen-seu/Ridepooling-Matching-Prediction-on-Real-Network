@@ -79,7 +79,7 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
                     shared = L1
                 detour_seeker = ride_seeker - L1
                 detour_taker = ride_taker - L2
-                prefer = params['w_detour'] * detour + params['w_pickup'] * pickup_distance + params['w_shared'] * shared
+                prefer = params['w_detour'] * detour + params['w_pickup'] * pickup_distance + params['w_shared'] * shared + params["w_ride"] * (ride_seeker + ride_taker - shared)
                 match.append([OD_idx1, OD_idx2, 0, prefer, ride_seeker, ride_taker, detour_seeker, detour_taker, shared])
     for edge in nearest_G.edges(data=True):
         link_id = edge[2]["key"]
@@ -125,7 +125,7 @@ def search_matching_pairs(OD_idx1, OD_idx2, OD1, OD2, L1, L2, distance_between_d
                     shared = L1
                 detour_seeker = max(ride_seeker - L1, 0)
                 detour_taker = max(ride_taker - L2, 0)
-                prefer = params['w_detour'] * detour + params['w_pickup'] * pickup_distance + params['w_shared'] * shared
+                prefer = params['w_detour'] * detour + params['w_pickup'] * pickup_distance + params['w_shared'] * shared + params["w_ride"] * (ride_seeker + ride_taker - shared)
                 match.append([OD_idx1, OD_idx2, i, prefer, ride_seeker, ride_taker, detour_seeker, detour_taker, shared])
     return match
 
